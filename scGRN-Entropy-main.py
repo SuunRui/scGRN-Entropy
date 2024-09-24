@@ -1,8 +1,9 @@
 from gene_pool import True_pool
-from GRN_func import GRN_func
+from GRN_func import GRN_func, read_GRN
 from caculate_TranProb_PTime_Entropy import caculate_transition_proba, mfpt_f
 from pseudo_time import PBA, preprocessing
 from getMST import getmst
+from distance_matrix import save_distance
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -24,8 +25,10 @@ import heapq
 from scipy.spatial.distance import pdist, squareform
 
 
-
-# Load the RDS file
+data_path = "D:/A_study/A_study/cell_differentiation2/code/projection/"
+FolderName = 'mammary-gland-involution-endothelial-cell-aqp1-gradient_mca'
+result_path = "D:/A_study/A_study/cell_differentiation2/code/projection/result/"
+# Load the RDS file 
 rds_data = robjects.r['readRDS'](data_path + FolderName + '.rds')
 # 将R中的稀疏矩阵转换为Python中的稀疏矩阵
 dense_matrix = robjects.r['as'](rds_data.rx2('expression'), 'matrix')
@@ -50,20 +53,22 @@ try:
     sc.pp.filter_genes_dispersion(adata, n_top_genes = 2000)
 except:
     print('Have not enouth genes')
-# result_path = 
-# FolderName = 
+
 neighborsNumber = int(len(adata.obs) * 0.01)
 if neighborsNumber < 10:
     print('数据集太小了')
     neighborsNumber = 10
-pooled_data = True_pool(adata,len(adata.var))
+# pooled_data = True_pool(adata,len(adata.var))
+directory = result_path+FolderName
+if not os.path.exists(directory):
+    os.makedirs(directory)
 # pooled_data.to_csv(result_path+FolderName+'/pooled_data.csv')
-# pooled_data = pd.read_csv(result_path+FolderName+'/pooled_data.csv', index_col=0)
+pooled_data = pd.read_csv(result_path+FolderName+'/pooled_data.csv', index_col=0)
 hvg_express_array = pooled_data.values
-_ = GRN_func(0, len(hvg_express_array[0]), hvg_express_array, result_path + FolderName)
-GRNs, GRNs_dim = read_GRN(hvg_express_array, len(hvg_express_array), len(hvg_express_array[0]), result_path + FolderName)
+# _ = GRN_func(0, len(hvg_express_array[0]), hvg_express_array, result_path + FolderName)
+GRNs = read_GRN(hvg_express_array, len(hvg_express_array), len(hvg_express_array[0]), result_path + FolderName)
 transition_proba = caculate_transition_proba(GRNs)
-# np.savetxt(result_path+FolderName+'/transition_proba.txt', transition_proba)
+np.savetxt(result_path+FolderName+'/transition_proba.txt', transition_proba)
 # transition_proba = np.loadtxt(result_path+FolderName+'/transition_proba.txt')
 _ = mfpt_f(transition_proba, adata)
 top_ten_indices = np.argsort(-transition_proba, axis=1)[:, :neighborsNumber]
@@ -72,4 +77,5 @@ for i in range(len(top_ten_indices)):
     distances_transition_proba[i, top_ten_indices[i]] = 1
 PBA_T = PBA(adata, distances_transition_proba, transition_proba)
 # np.savetxt(result_path+FolderName+'/PBA.txt', PBA_T)
-getmst(PBA_T, adata, FolderName, result_path)
+save_distance(FolderName, result_path, data_path)
+getmst(PBA_T, adata, FolderName, result_path, neighborsNumber)
