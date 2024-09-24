@@ -35,8 +35,6 @@ dense_matrix = robjects.r['as'](rds_data.rx2('expression'), 'matrix')
 # 将稠密矩阵转换为NumPy数组
 dense_array = np.array(dense_matrix)
 # 获取稀疏矩阵的行名和列名
-# rownames = list(rds_data.rx2('cell_info')[0])
-# colnames = list(rds_data.rx2('feature_info')[0])
 rownames = list(rds_data.rx2('cell_info').rx2('cell_id'))
 colnames = list(rds_data.rx2('feature_info').rx2('feature_id'))
 adata = ad.AnnData(dense_array, obs = pd.DataFrame(index = rownames), var = pd.DataFrame(index = colnames))
@@ -45,7 +43,6 @@ adata.uns['milestone_network'] = rds_data.rx2('milestone_network')
 adata.uns['start_id'] = list(rds_data.rx2('prior_information').rx2('start_id'))
 adata.uns['start_milestones'] = list(rds_data.rx2('prior_information').rx2('start_milestones'))
 adata.obs['stage'] = np.array(rds_data.rx2('prior_information').rx2('timecourse_discrete'))
-# adata.obs['stage'] = (adata.obs['stage'].values-np.min(adata.obs['stage']))/(np.max(adata.obs['stage'])-np.min(adata.obs['stage']))
 sc.pp.normalize_total(adata, target_sum=1e4)
 sc.pp.log1p(adata)
 try:
@@ -58,14 +55,14 @@ neighborsNumber = int(len(adata.obs) * 0.01)
 if neighborsNumber < 10:
     print('数据集太小了')
     neighborsNumber = 10
-# pooled_data = True_pool(adata,len(adata.var))
+pooled_data = True_pool(adata,len(adata.var))
 directory = result_path+FolderName
 if not os.path.exists(directory):
     os.makedirs(directory)
-# pooled_data.to_csv(result_path+FolderName+'/pooled_data.csv')
-pooled_data = pd.read_csv(result_path+FolderName+'/pooled_data.csv', index_col=0)
+pooled_data.to_csv(result_path+FolderName+'/pooled_data.csv')
+# pooled_data = pd.read_csv(result_path+FolderName+'/pooled_data.csv', index_col=0)
 hvg_express_array = pooled_data.values
-# _ = GRN_func(0, len(hvg_express_array[0]), hvg_express_array, result_path + FolderName)
+_ = GRN_func(0, len(hvg_express_array[0]), hvg_express_array, result_path + FolderName)
 GRNs = read_GRN(hvg_express_array, len(hvg_express_array), len(hvg_express_array[0]), result_path + FolderName)
 transition_proba = caculate_transition_proba(GRNs)
 np.savetxt(result_path+FolderName+'/transition_proba.txt', transition_proba)
@@ -76,6 +73,6 @@ distances_transition_proba = np.zeros(transition_proba.shape)
 for i in range(len(top_ten_indices)):
     distances_transition_proba[i, top_ten_indices[i]] = 1
 PBA_T = PBA(adata, distances_transition_proba, transition_proba)
-# np.savetxt(result_path+FolderName+'/PBA.txt', PBA_T)
+np.savetxt(result_path+FolderName+'/PBA.txt', PBA_T)
 save_distance(FolderName, result_path, data_path)
 getmst(PBA_T, adata, FolderName, result_path, neighborsNumber)
