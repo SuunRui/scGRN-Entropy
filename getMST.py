@@ -238,7 +238,7 @@ def Caculate_PseudoTime(PBA_T, root_index, RootGroup, adata):
     return pseudo_time, accumulate_transition_probaN
 
 
-def getmst(PBA_T, adata, FolderName, result_path):
+def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber):
     # Load the RDS file
     # rds_data = robjects.r['readRDS'](data_path + FolderName + '.rds')
     # # 将R中的稀疏矩阵转换为Python中的稀疏矩阵
@@ -268,7 +268,7 @@ def getmst(PBA_T, adata, FolderName, result_path):
     # if neighborsNumber < 10:
     #     print('数据集太小了')
     #     neighborsNumber = 10
-    # transition_proba = np.loadtxt(result_path+FolderName+'/transition_proba.txt')
+    transition_proba = np.loadtxt(result_path+FolderName+'/transition_proba.txt')
     distance_matrix = np.loadtxt(result_path+FolderName+'/distance.txt')
 
     GroupIdDict = {}
@@ -285,7 +285,7 @@ def getmst(PBA_T, adata, FolderName, result_path):
     pca_data = adata.obsm['X_pca']
     sc.pp.neighbors(adata, n_neighbors=neighborsNumber)
     sc.tl.umap(adata)
-    计算样本之间的欧氏距离
+    # 计算样本之间的欧氏距离
     distances = pdist(pca_data, metric='euclidean')
     distances = squareform(distances)
     # np.savetxt(result_path+FolderName+'/distance_pca.txt', distances)
@@ -297,7 +297,7 @@ def getmst(PBA_T, adata, FolderName, result_path):
 
     # adata.obsm['distance_all'] = distance_all
     RootGroup1 = []
-    root_index = [np.where(adata.obs.index==item)[0][0] for item in list(rds_data.rx2('prior_information').rx2('start_id'))]
+    root_index = [np.where(adata.obs.index==item)[0][0] for item in adata.uns['start_id']]
     for item in adata.obs['GroupId'].values[root_index]:
         RootGroup1.append(item)
     distance_all_amend, distances_transition_proba = amend_matrix(distance_all, neighborsNumber)
@@ -372,29 +372,29 @@ def getmst(PBA_T, adata, FolderName, result_path):
     except:
         print('disconnect')
     
-    print(adata.uns['milestone_network'])
+    print(adata.uns['milestone_network'])#输出真实的细胞分化轨迹
 
 
-from rpy2.robjects import r, pandas2ri
-from rpy2.robjects.packages import importr
-from pathlib import Path
-np.random.seed(520)
-pandas2ri.activate()
-# 导入R的base包
-base = importr('base')
-# 指定文件夹路径
-data_path = 'data/silver1/'
-result_path = 'result/silver_valve2/'
-# 获取文件夹中所有.rds文件
-rds_files = Path(data_path).rglob('*.rds')
-# 按顺序读取每个.rds文件
-for rds_file in sorted(rds_files):
-    # 读取.rds文件
-    rds_content = base.readRDS(str(rds_file))
-    # 获取.rds文件的名称（不包括扩展名）
-    rds_name = rds_file.stem
-    print(rds_name)
-    # 创建一个新的文件夹，名称为.rds文件的名称
-    new_folder_path = os.path.join(result_path, rds_name)
-    os.makedirs(new_folder_path, exist_ok=True)
-    getmst(data_path, rds_name, result_path)
+# from rpy2.robjects import r, pandas2ri
+# from rpy2.robjects.packages import importr
+# from pathlib import Path
+# np.random.seed(520)
+# pandas2ri.activate()
+# # 导入R的base包
+# base = importr('base')
+# # 指定文件夹路径
+# data_path = 'data/silver1/'
+# result_path = 'result/silver_valve2/'
+# # 获取文件夹中所有.rds文件
+# rds_files = Path(data_path).rglob('*.rds')
+# # 按顺序读取每个.rds文件
+# for rds_file in sorted(rds_files):
+#     # 读取.rds文件
+#     rds_content = base.readRDS(str(rds_file))
+#     # 获取.rds文件的名称（不包括扩展名）
+#     rds_name = rds_file.stem
+#     print(rds_name)
+#     # 创建一个新的文件夹，名称为.rds文件的名称
+#     new_folder_path = os.path.join(result_path, rds_name)
+#     os.makedirs(new_folder_path, exist_ok=True)
+#     getmst(data_path, rds_name, result_path)
