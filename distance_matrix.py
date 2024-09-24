@@ -49,7 +49,7 @@ def caculate_transition_proba(GRNs):
     return transition_proba
 
 
-def preprocessing(FolderName, result_path, data_path):
+def save_distance(FolderName, result_path, data_path):
     pooled_data = pd.read_csv(result_path+FolderName+'/pooled_data.csv', index_col=0)
     # neighborsNumber = int(len(pooled_data) * 0.01)
     # if neighborsNumber < 10:
