@@ -51,7 +51,7 @@ def GRN_func(star, extend, svg_express_array, file_way):
     GRN_all = np.empty([len(svg_express_array), len(gene_range) - 1 , len(gene_range) - 1])#初始化一个array来存储所有spot的GRN
     for item in zip(svg_express_array, range(len(svg_express_array))):
         GRN_item = sc_sg_GRN(item[0])
-        np.savetxt(file_way +'cell' + str(item[1]+1) + '.txt', GRN_item, fmt = '%s')
+        np.savetxt(file_way +'/cell' + str(item[1]+1) + '.txt', GRN_item, fmt = '%s')
         #GRN_all[item[1]] = GRN_item
         print('完成了第{}个cell'.format(item[1]+1))
     return GRN_all
@@ -59,7 +59,7 @@ def GRN_func(star, extend, svg_express_array, file_way):
 
 def read_GRN(svg_express_array, spot_num, hsvg_num, folder_way):
     '''通过读取文件获得GRNS相关信息'''
-    GRNs_dim = np.empty([spot_num, hsvg_num])####存储GRN的度（基因对外调控，即基因的重要性）
+    # GRNs_dim = np.empty([spot_num, hsvg_num])####存储GRN的度（基因对外调控，即基因的重要性）
     GRNs = np.empty([len(svg_express_array), len(svg_express_array[0]), len(svg_express_array[0])], dtype='float32')#初始化一个array来存储所有spot的GRN
     for i in range(len(svg_express_array)):
         file_way = folder_way + '/cell' + str(i+1) + '.txt'
@@ -67,8 +67,8 @@ def read_GRN(svg_express_array, spot_num, hsvg_num, folder_way):
         for j in range(len(GRNs[i])):
             GRNs[i][j][j] = 0
         #GRNs[np.where(np.abs(GRNs) < 0.01)] = 0######将GRNs的小于0.01的值设置为0
-        GRNs_dim[i] = np.sum(np.abs(GRNs[i]), axis = 0)
-    return GRNs, GRNs_dim
+        # GRNs_dim[i] = np.sum(np.abs(GRNs[i]), axis = 0)
+    return GRNs
 
 # def GRN_hotfig(GRN):
 #     # 获得GRN的in和out
