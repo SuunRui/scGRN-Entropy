@@ -237,6 +237,41 @@ def Caculate_PseudoTime(PBA_T, root_index, RootGroup, adata):
     # pseudo_time = pseudo_time.reshape(1, -1)
     return pseudo_time, accumulate_transition_probaN
 
+# 将MST变成有向图
+def directed_mst(mst, start):
+    directed = nx.DiGraph()
+    visited = set()
+
+    def dfs(node):
+        for neighbor in mst.neighbors(node):
+            if neighbor not in visited:
+                directed.add_edge(node, neighbor)
+                visited.add(neighbor)
+                dfs(neighbor)
+
+    visited.add(start)
+    dfs(start)
+    return directed
+
+def directed_mst_from_multiple_starts(mst, start_nodes):
+    '''根据起点将最小生成树变成有向图'''
+    directed = nx.DiGraph()
+    visited = set()
+
+    def dfs(node):
+        for neighbor in mst.neighbors(node):
+            if neighbor not in visited:
+                directed.add_edge(node, neighbor)
+                visited.add(neighbor)
+                dfs(neighbor)
+
+    for start in start_nodes:
+        if start not in visited:
+            visited.add(start)
+            dfs(start)
+    
+    return directed
+
 
 def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber):
     # Load the RDS file
@@ -353,6 +388,7 @@ def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber):
     try:
         mst_Group = nx.minimum_spanning_tree(G_Group, algorithm='kruskal', weight='weight')
         # mst_Group = prim_with_start(G_Group, start_Group)
+        mst_Group = directed_mst(mst_Group, start_Group)
         pos_Group = nx.spring_layout(mst_Group)
         nx.draw_networkx_nodes(mst_Group, pos_Group, node_size=300, alpha=1)
         nx.draw_networkx_edges(mst_Group, pos_Group, edge_color='k', width=1, alpha=0.3, arrowsize=3)
@@ -371,8 +407,18 @@ def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber):
         np.savetxt(result_path+FolderName+'\G_edges.txt', G_amend_edges, fmt='%s', delimiter=',')
     except:
         print('disconnect')
-    
-    print(adata.uns['milestone_network'])#输出真实的细胞分化轨迹
+    # for item_milestone_network in adata.uns['milestone_network']:
+    #     print(item_milestone_network)
+    edge_number = len(adata.uns['milestone_network'][0])
+    print(adata.uns['milestone_network'])
+    milestone_network = []
+    for i in range(edge_number):
+        milestone_network.append((adata.uns['milestone_network'][0][i], adata.uns['milestone_network'][1][i]))
+    common_elements = set(mst_Group_edges) & set(milestone_network)
+    count = len(common_elements)
+    print('正确率：', count/edge_number)
+    print(len(adata.uns['start_milestones']))
+    # print(adata.uns['milestone_network'][0])#输出真实的细胞分化轨迹
 
 
 # from rpy2.robjects import r, pandas2ri
