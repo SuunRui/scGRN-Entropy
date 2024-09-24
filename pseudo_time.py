@@ -356,25 +356,25 @@ def preprocessing(PBA_T, adata, result_path, FolderName):
     print('milestone_network_edges_set:', milestone_network_edges_set)
 
 # 启用R到pandas的数据框转换
-pandas2ri.activate()
-# 导入R的base包
-base = importr('base')
-# 指定文件夹路径
-data_path = 'data/goldo/'
-result_path = 'result/gold_valve2/'
-# 获取文件夹中所有.rds文件
-rds_files = Path(data_path).rglob('*.rds')
-# 按顺序读取每个.rds文件
-for rds_file in sorted(rds_files):
-    # 读取.rds文件
-    rds_content = base.readRDS(str(rds_file))
-    # 获取.rds文件的名称（不包括扩展名）
-    rds_name = rds_file.stem
-    print(rds_name)
-    # 创建一个新的文件夹，名称为.rds文件的名称
-    new_folder_path = os.path.join(result_path, rds_name)
-    os.makedirs(new_folder_path, exist_ok=True)
-    preprocessing(rds_name, result_path, data_path)
+# pandas2ri.activate()
+# # 导入R的base包
+# base = importr('base')
+# # 指定文件夹路径
+# data_path = 'data/goldo/'
+# result_path = 'result/gold_valve2/'
+# # 获取文件夹中所有.rds文件
+# rds_files = Path(data_path).rglob('*.rds')
+# # 按顺序读取每个.rds文件
+# for rds_file in sorted(rds_files):
+#     # 读取.rds文件
+#     rds_content = base.readRDS(str(rds_file))
+#     # 获取.rds文件的名称（不包括扩展名）
+#     rds_name = rds_file.stem
+#     print(rds_name)
+#     # 创建一个新的文件夹，名称为.rds文件的名称
+#     new_folder_path = os.path.join(result_path, rds_name)
+#     os.makedirs(new_folder_path, exist_ok=True)
+#     preprocessing(rds_name, result_path, data_path)
 
     
     
