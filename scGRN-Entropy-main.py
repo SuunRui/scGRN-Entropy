@@ -2,7 +2,7 @@ from gene_pool import True_pool
 from GRN_func import GRN_func, read_GRN
 from caculate_TranProb_PTime_Entropy import caculate_transition_proba, mfpt_f
 from pseudo_time import PBA, preprocessing
-from getMST import getmst
+from getMST import getmst, optimize_super_param
 from distance_matrix import save_distance
 
 import numpy as np
@@ -24,9 +24,9 @@ import heapq
 from scipy.spatial.distance import pdist, squareform
 
 
-data_path = "D:/A_study/A_study/cell_differentiation2/code/projection/"
-FolderName = 'mammary-gland-involution-endothelial-cell-aqp1-gradient_mca'
-result_path = "D:/A_study/A_study/cell_differentiation2/code/projection/result/"
+data_path = "D:/A_study/A_study/cell_differentiation2/code/data/silvero/"
+FolderName = 'placenta-trophoblast-differentiation_mca'
+result_path = "D:/A_study/A_study/cell_differentiation2/code/result/silver_valve2/"
 # Load the RDS file 
 rds_data = robjects.r['readRDS'](data_path + FolderName + '.rds')
 # 将R中的稀疏矩阵转换为Python中的稀疏矩阵
@@ -72,7 +72,11 @@ top_ten_indices = np.argsort(-transition_proba, axis=1)[:, :neighborsNumber]
 distances_transition_proba = np.zeros(transition_proba.shape)
 for i in range(len(top_ten_indices)):
     distances_transition_proba[i, top_ten_indices[i]] = 1
-PBA_T = PBA(adata, distances_transition_proba, transition_proba)
-np.savetxt(result_path+FolderName+'/PBA.txt', PBA_T)
+# PBA_T = PBA(adata, distances_transition_proba, transition_proba)
+# np.savetxt(result_path+FolderName+'/PBA.txt', PBA_T)
+PBA_T = np.loadtxt(result_path+FolderName+'/PBA.txt')
 save_distance(FolderName, result_path, data_path)
-getmst(PBA_T, adata, FolderName, result_path, neighborsNumber)
+# getmst(PBA_T, adata, FolderName, result_path, neighborsNumber)
+optimize_record, best_param, best_score = optimize_super_param(PBA_T, adata, FolderName, result_path, neighborsNumber)
+np.savetxt(result_path+FolderName+'/optimize_record.txt', optimize_record)
+getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, best_param)

@@ -254,7 +254,7 @@ def directed_mst(mst, start):
     return directed
 
 def directed_mst_from_multiple_starts(mst, start_nodes):
-    '''根据起点将最小生成树变成有向图'''
+    '''根据起点将MST变成有向图'''
     directed = nx.DiGraph()
     visited = set()
 
@@ -275,20 +275,27 @@ def directed_mst_from_multiple_starts(mst, start_nodes):
 def According_StartNode_GetMST(G_Group, start_node):
     if len(start_node) == 1:
         mst_Group = nx.minimum_spanning_tree(G_Group, algorithm='kruskal', weight='weight')
-        mst_Group = directed_mst(mst_Group, start_node)
+        # mst_Group = directed_mst(mst_Group, start_node)
     elif len(start_node) > 1:
         mst_Group_list = []
+        i=0
         for item in start_node:
             G_Group_copy = G_Group.copy()
-            G_Group_copy.remove_node(item)
+            remaining = start_node[:i] + start_node[i+1:]
+            for item_remove_StartNode in remaining:
+                G_Group_copy.remove_node(item_remove_StartNode)
             mst_Group_item = nx.minimum_spanning_tree(G_Group_copy, algorithm='kruskal', weight='weight')
+            # mst_Group_item = directed_mst(mst_Group_item, item)
+            i+=1
             mst_Group_list.append(mst_Group_item)
         mst_Group = nx.compose_all(mst_Group_list)
         # mst_Group = directed_mst_from_multiple_starts(mst_Group, start_node)
     else:
         print('Error, No Have Root Cell')
     return mst_Group
-def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber):
+
+
+def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, super_param):
 
     transition_proba = np.loadtxt(result_path+FolderName+'/transition_proba.txt')
     distance_matrix = np.loadtxt(result_path+FolderName+'/distance.txt')
@@ -344,7 +351,7 @@ def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber):
     min_node_values_list = np.min(node_values_list)
     for item in node_values.keys():
         node_values[item] = (node_values[item]-min_node_values_list)/(max_node_values_list-min_node_values_list)
-    print(node_values)
+    # print(node_values)
     # pos_Group = nx.spring_layout(G_Group)
     # nx.draw_networkx_nodes(G_Group, pos_Group, node_size=300, alpha=1)
     # nx.draw_networkx_edges(G_Group, pos_Group, edge_color='k', width=1, alpha=0.3, arrowsize=3)
@@ -371,21 +378,23 @@ def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber):
     min_difference_value = np.min(difference_value)
     for u,v,w in G_Group.edges(data=True):
         # w['weight'] = w['weight']
-        w['weight'] = w['weight'] + 0.2*(tick(np.abs(node_values[u] - node_values[v])) - min_difference_value)/(max_difference_value-min_difference_value)
+        w['weight'] = w['weight'] + super_param*(tick(np.abs(node_values[u] - node_values[v])) - min_difference_value)/(max_difference_value-min_difference_value)
+        # print(w['weight'])
     # mst_Group = According_StartNode_GetMST(G_Group, start_Group)
+    # print(G_Group.edges())
     try:
         mst_Group = According_StartNode_GetMST(G_Group, start_Group)
-        print(mst_Group.edges())
+        # print(mst_Group.edges())
         # mst_Group = nx.minimum_spanning_tree(G_Group, algorithm='kruskal', weight='weight')
         # mst_Group = prim_with_start(G_Group, start_Group)
         # mst_Group = directed_mst(mst_Group, start_Group)
-        pos_Group = nx.spring_layout(mst_Group)
-        nx.draw_networkx_nodes(mst_Group, pos_Group, node_size=300, alpha=1)
-        nx.draw_networkx_edges(mst_Group, pos_Group, edge_color='k', width=1, alpha=0.3, arrowsize=3)
-        nx.draw_networkx_labels(mst_Group, pos_Group, font_size=10, font_color='k', font_family='Times New Roman')
-        plt.title('MST')
-        plt.axis('off')
-        plt.show()
+        # pos_Group = nx.spring_layout(mst_Group)
+        # nx.draw_networkx_nodes(mst_Group, pos_Group, node_size=300, alpha=1)
+        # nx.draw_networkx_edges(mst_Group, pos_Group, edge_color='k', width=1, alpha=0.3, arrowsize=3)
+        # nx.draw_networkx_labels(mst_Group, pos_Group, font_size=10, font_color='k', font_family='Times New Roman')
+        # plt.title('MST')
+        # plt.axis('off')
+        # plt.show()
         mst_Group_edges = list(mst_Group.edges)
         np.savetxt(result_path+FolderName+'\mst_Group.txt', mst_Group_edges, fmt='%s', delimiter=',')
         G_amend_edges = np.empty((0, 3))
@@ -400,37 +409,39 @@ def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber):
     # for item_milestone_network in adata.uns['milestone_network']:
     #     print(item_milestone_network)
     edge_number = len(adata.uns['milestone_network'][0])
-    print(adata.uns['milestone_network'])
+    # print(adata.uns['milestone_network'])
     milestone_network = []
     for i in range(edge_number):
         milestone_network.append((adata.uns['milestone_network'][0][i], adata.uns['milestone_network'][1][i]))
-    common_elements = set(mst_Group_edges) & set(milestone_network)
+    G_milestone_network = nx.Graph()
+    G_milestone_network.add_edges_from(milestone_network)
+    common_elements = set(map(frozenset, mst_Group.edges())) & set(map(frozenset, G_milestone_network.edges()))
     count = len(common_elements)
     print('正确率：', count/edge_number)
-    print(len(adata.uns['start_milestones']))
+    # print(len(adata.uns['start_milestones']))
     # print(adata.uns['milestone_network'][0])#输出真实的细胞分化轨迹
+    return count/edge_number
 
 
-# from rpy2.robjects import r, pandas2ri
-# from rpy2.robjects.packages import importr
-# from pathlib import Path
-# np.random.seed(520)
-# pandas2ri.activate()
-# # 导入R的base包
-# base = importr('base')
-# # 指定文件夹路径
-# data_path = 'data/silver1/'
-# result_path = 'result/silver_valve2/'
-# # 获取文件夹中所有.rds文件
-# rds_files = Path(data_path).rglob('*.rds')
-# # 按顺序读取每个.rds文件
-# for rds_file in sorted(rds_files):
-#     # 读取.rds文件
-#     rds_content = base.readRDS(str(rds_file))
-#     # 获取.rds文件的名称（不包括扩展名）
-#     rds_name = rds_file.stem
-#     print(rds_name)
-#     # 创建一个新的文件夹，名称为.rds文件的名称
-#     new_folder_path = os.path.join(result_path, rds_name)
-#     os.makedirs(new_folder_path, exist_ok=True)
-#     getmst(data_path, rds_name, result_path)
+
+
+def optimize_super_param(PBA_T, adata, FolderName, result_path, neighborsNumber, param_range=np.linspace(0, 1, 11)):
+    best_param = None
+    best_score = -np.inf  # 评分越高越好
+    optimize_record = np.empty((11, 2))
+    i = 0
+    for param in param_range:
+        # 调用 getmst 函数
+        score = getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, super_param=param)
+        optimize_record[i, 0], optimize_record[i, 1] = param, score
+        i += 1
+        print(f"当前参数: {param}, 当前评分: {score}")
+        if score > best_score:
+            best_score = score
+            best_param = param
+    
+    print(f"最佳 super_param: {best_param}, 评分: {best_score}")
+    return optimize_record, best_param, best_score
+
+# best_param, best_score = optimize_super_param(PBA_T, adata, save_path, neighborsNumber)
+
