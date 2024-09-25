@@ -272,37 +272,24 @@ def directed_mst_from_multiple_starts(mst, start_nodes):
     
     return directed
 
-
+def According_StartNode_GetMST(G_Group, start_node):
+    if len(start_node) == 1:
+        mst_Group = nx.minimum_spanning_tree(G_Group, algorithm='kruskal', weight='weight')
+        mst_Group = directed_mst(mst_Group, start_node)
+    elif len(start_node) > 1:
+        mst_Group_list = []
+        for item in start_node:
+            G_Group_copy = G_Group.copy()
+            G_Group_copy.remove_node(item)
+            mst_Group_item = nx.minimum_spanning_tree(G_Group_copy, algorithm='kruskal', weight='weight')
+            mst_Group_list.append(mst_Group_item)
+        mst_Group = nx.compose_all(mst_Group_list)
+        # mst_Group = directed_mst_from_multiple_starts(mst_Group, start_node)
+    else:
+        print('Error, No Have Root Cell')
+    return mst_Group
 def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber):
-    # Load the RDS file
-    # rds_data = robjects.r['readRDS'](data_path + FolderName + '.rds')
-    # # 将R中的稀疏矩阵转换为Python中的稀疏矩阵
-    # dense_matrix = robjects.r['as'](rds_data.rx2('expression'), 'matrix')
-    # # 将稠密矩阵转换为NumPy数组
-    # dense_array = np.array(dense_matrix)
-    # # 获取稀疏矩阵的行名和列名
-    # # rownames = list(rds_data.rx2('cell_info')[0])
-    # # colnames = list(rds_data.rx2('feature_info')[0])
-    # rownames = list(rds_data.rx2('cell_info').rx2('cell_id'))
-    # colnames = list(rds_data.rx2('feature_info').rx2('feature_id'))
-    # adata = ad.AnnData(dense_array, obs = pd.DataFrame(index = rownames), var = pd.DataFrame(index = colnames))
-    # adata.obs['group_id'] = rds_data.rx2('grouping')
-    # adata.uns['milestone_network'] = rds_data.rx2('milestone_network')
-    # adata.uns['start_id'] = list(rds_data.rx2('prior_information').rx2('start_id'))
-    # adata.uns['start_milestones'] = list(rds_data.rx2('prior_information').rx2('start_milestones'))
-    # adata.obs['stage'] = np.array(rds_data.rx2('prior_information').rx2('timecourse_discrete'))
-    # # adata.obs['stage'] = (adata.obs['stage'].values-np.min(adata.obs['stage']))/(np.max(adata.obs['stage'])-np.min(adata.obs['stage']))
-    # sc.pp.normalize_total(adata, target_sum=1e4)
-    # sc.pp.log1p(adata)
-    # try:
-    #     sc.pp.highly_variable_genes(adata, min_mean=0.0125, max_mean=3, min_disp=0.5)
-    #     sc.pp.filter_genes_dispersion(adata, n_top_genes = 2000)
-    # except:
-    #     print('Have not enouth genes')
-    # neighborsNumber = int(len(adata.obs) * 0.01)
-    # if neighborsNumber < 10:
-    #     print('数据集太小了')
-    #     neighborsNumber = 10
+
     transition_proba = np.loadtxt(result_path+FolderName+'/transition_proba.txt')
     distance_matrix = np.loadtxt(result_path+FolderName+'/distance.txt')
 
@@ -365,7 +352,7 @@ def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber):
     # plt.title('G')
     # plt.axis('off')
     # plt.show()
-    start_Group = adata.uns['start_milestones'][0]
+    start_Group = adata.uns['start_milestones']
     max_weigth = 0
     min_weigth = 100000000
     for u,v,w in G_Group.edges(data=True):
@@ -385,10 +372,13 @@ def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber):
     for u,v,w in G_Group.edges(data=True):
         # w['weight'] = w['weight']
         w['weight'] = w['weight'] + 0.2*(tick(np.abs(node_values[u] - node_values[v])) - min_difference_value)/(max_difference_value-min_difference_value)
+    # mst_Group = According_StartNode_GetMST(G_Group, start_Group)
     try:
-        mst_Group = nx.minimum_spanning_tree(G_Group, algorithm='kruskal', weight='weight')
+        mst_Group = According_StartNode_GetMST(G_Group, start_Group)
+        print(mst_Group.edges())
+        # mst_Group = nx.minimum_spanning_tree(G_Group, algorithm='kruskal', weight='weight')
         # mst_Group = prim_with_start(G_Group, start_Group)
-        mst_Group = directed_mst(mst_Group, start_Group)
+        # mst_Group = directed_mst(mst_Group, start_Group)
         pos_Group = nx.spring_layout(mst_Group)
         nx.draw_networkx_nodes(mst_Group, pos_Group, node_size=300, alpha=1)
         nx.draw_networkx_edges(mst_Group, pos_Group, edge_color='k', width=1, alpha=0.3, arrowsize=3)

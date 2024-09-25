@@ -11,7 +11,6 @@ import pandas as pd
 import os
 os.environ['R_HOME'] = 'D:/R-4.4.0'
 import scanpy as sc
-import scanpy as sc
 import anndata as ad
 import matplotlib.colors as mcolors
 import rpy2.robjects as robjects
@@ -55,18 +54,19 @@ neighborsNumber = int(len(adata.obs) * 0.01)
 if neighborsNumber < 10:
     print('数据集太小了')
     neighborsNumber = 10
-pooled_data = True_pool(adata,len(adata.var))
+# pooled_data = True_pool(adata,len(adata.var))
+
 directory = result_path+FolderName
 if not os.path.exists(directory):
     os.makedirs(directory)
-pooled_data.to_csv(result_path+FolderName+'/pooled_data.csv')
-# pooled_data = pd.read_csv(result_path+FolderName+'/pooled_data.csv', index_col=0)
+# pooled_data.to_csv(result_path+FolderName+'/pooled_data.csv')
+pooled_data = pd.read_csv(result_path+FolderName+'/pooled_data.csv', index_col=0)
 hvg_express_array = pooled_data.values
-_ = GRN_func(0, len(hvg_express_array[0]), hvg_express_array, result_path + FolderName)
+# _ = GRN_func(0, len(hvg_express_array[0]), hvg_express_array, result_path + FolderName)
 GRNs = read_GRN(hvg_express_array, len(hvg_express_array), len(hvg_express_array[0]), result_path + FolderName)
-transition_proba = caculate_transition_proba(GRNs)
-np.savetxt(result_path+FolderName+'/transition_proba.txt', transition_proba)
-# transition_proba = np.loadtxt(result_path+FolderName+'/transition_proba.txt')
+# transition_proba = caculate_transition_proba(GRNs)
+# np.savetxt(result_path+FolderName+'/transition_proba.txt', transition_proba)
+transition_proba = np.loadtxt(result_path+FolderName+'/transition_proba.txt')
 _ = mfpt_f(transition_proba, adata)
 top_ten_indices = np.argsort(-transition_proba, axis=1)[:, :neighborsNumber]
 distances_transition_proba = np.zeros(transition_proba.shape)
