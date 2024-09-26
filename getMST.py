@@ -4,18 +4,17 @@ import pandas as pd
 import os
 os.environ['R_HOME'] = 'D:/R-4.4.0'
 import scanpy as sc
-import scanpy as sc
 import anndata as ad
 import matplotlib.colors as mcolors
 import rpy2.robjects as robjects
 from scipy.optimize import minimize
-import networkx as nx
 from pathlib import Path
 from rpy2.robjects import r, pandas2ri
 from rpy2.robjects.packages import importr
 import pcurve
 import heapq
 from scipy.spatial.distance import pdist, squareform
+import networkx as nx
 
 
 def normalize_f(x):
@@ -60,8 +59,6 @@ def prim_with_start(G, start_node):
     return mst
 def min_max(array):
     return (array - np.min(array)) / (np.max(array) - np.min(array))
-import networkx as nx
-import heapq
 def adjacency_matrix_to_graph(matrix ,adata):
     G = nx.Graph()
     n = len(matrix)
@@ -100,7 +97,6 @@ def BuildNet(NodeName, adjacency_matrix, adata):
         i+=1
     G.add_edges_from(edges)
     return G
-
 def merge_nodes_with_weighted_edges(G, node1, node2):
     # 找到节点1和节点2分别连接到其他节点的边
     edges_to_merge = []
@@ -236,9 +232,8 @@ def Caculate_PseudoTime(PBA_T, root_index, RootGroup, adata):
     pseudo_time = (pseudo_time - np.min(pseudo_time) + 0.01 * (np.max(pseudo_time) - np.min(pseudo_time))) / (np.max(pseudo_time) - np.min(pseudo_time))
     # pseudo_time = pseudo_time.reshape(1, -1)
     return pseudo_time, accumulate_transition_probaN
-
-# 将MST变成有向图
 def directed_mst(mst, start):
+    # 将MST变成有向图
     directed = nx.DiGraph()
     visited = set()
 
@@ -252,7 +247,6 @@ def directed_mst(mst, start):
     visited.add(start)
     dfs(start)
     return directed
-
 def directed_mst_from_multiple_starts(mst, start_nodes):
     '''根据起点将MST变成有向图'''
     directed = nx.DiGraph()
@@ -271,7 +265,6 @@ def directed_mst_from_multiple_starts(mst, start_nodes):
             dfs(start)
     
     return directed
-
 def According_StartNode_GetMST(G_Group, start_node):
     if len(start_node) == 1:
         mst_Group = nx.minimum_spanning_tree(G_Group, algorithm='kruskal', weight='weight')
@@ -293,13 +286,96 @@ def According_StartNode_GetMST(G_Group, start_node):
     else:
         print('Error, No Have Root Cell')
     return mst_Group
-
-
-def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, super_param):
-
+# def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, super_param):
+#     transition_proba = np.loadtxt(result_path+FolderName+'/transition_proba.txt')
+#     distance_matrix = np.loadtxt(result_path+FolderName+'/distance.txt')
+#     GroupIdDict = {}
+#     i = 0
+#     for item in adata.obs['group_id'].unique():
+#         GroupIdDict[item] = i
+#         i+=1
+#     GroupId = []
+#     for item in adata.obs['group_id'].values:
+#         GroupId.append(int(GroupIdDict[item]))
+#     adata.obs['GroupId'] = GroupId
+#     sc.tl.pca(adata, svd_solver="arpack")
+#     pca_data = adata.obsm['X_pca']
+#     sc.pp.neighbors(adata, n_neighbors=neighborsNumber)
+#     sc.tl.umap(adata)
+#     # 计算样本之间的欧氏距离
+#     distances = pdist(pca_data, metric='euclidean')
+#     distances = squareform(distances)
+#     # np.savetxt(result_path+FolderName+'/distance_pca.txt', distances)
+#     # distances = np.loadtxt(result_path+FolderName+'/distance_pca.txt')
+#     distance_all = min_max(distances)*min_max(distance_matrix)
+#     # np.savetxt(result_path+FolderName+'/distance_all.txt', distance_all)
+#     # distance_all = np.loadtxt(result_path+FolderName+'/distance_all.txt')
+#     # adata.obsm['distance_all'] = distance_all
+#     RootGroup1 = []
+#     root_index = [np.where(adata.obs.index==item)[0][0] for item in adata.uns['start_id']]
+#     for item in adata.obs['GroupId'].values[root_index]:
+#         RootGroup1.append(item)
+#     distance_all_amend, distances_transition_proba = amend_matrix(distance_all, neighborsNumber)
+#     _ = mfpt_f(transition_proba, adata)
+#     PBA_T = PBA(adata, distances_transition_proba, transition_proba)
+#     np.savetxt(result_path+FolderName+'/PBA.txt', PBA_T)
+#     # PBA_T = np.loadtxt(result_path+FolderName+'/PBA.txt')
+#     pseudo_time, _ = Caculate_PseudoTime(PBA_T, root_index, RootGroup1, adata)
+#     np.savetxt(result_path+FolderName+'/pseudo_time.txt', pseudo_time)
+#     # pseudo_time = np.loadtxt(result_path+FolderName+'/pseudo_time.txt')
+#     adata.obs['pseudo time'] = pseudo_time
+#     distance_all_amend_df = pd.DataFrame(distance_all_amend, index=adata.obs.index, columns=adata.obs.index)
+#     G = adjacency_matrix_to_graph(distance_all_amend ,adata)
+#     GroupIndex = []
+#     for item in adata.obs['GroupId'].unique():
+#         GroupIndex.append(np.where(adata.obs['GroupId'] == item)[0])
+#     G_Group, node_values, node_length = CropNode(G, adata[list(G.nodes),:], RootGroup1, distance_all_amend_df)
+#     node_values_list = list(node_values.values())
+#     max_node_values_list = np.max(node_values_list)
+#     min_node_values_list = np.min(node_values_list)
+#     for item in node_values.keys():
+#         node_values[item] = (node_values[item]-min_node_values_list)/(max_node_values_list-min_node_values_list)
+#     start_Group = adata.uns['start_milestones']
+#     max_weigth = 0
+#     min_weigth = 100000000
+#     for u,v,w in G_Group.edges(data=True):
+#         if w['weight']>max_weigth:
+#             max_weigth=w['weight']
+#         if w['weight']<min_weigth:
+#             min_weigth=w['weight']
+#     for u,v,w in G_Group.edges(data=True):
+#         w['weight'] = (w['weight']-min_weigth)/(max_weigth-min_weigth)
+#     difference_value = []
+#     for u,v in G_Group.edges:
+#         difference_value.append(tick(np.abs(node_values[u] - node_values[v])))
+#     max_difference_value = np.max(difference_value)
+#     min_difference_value = np.min(difference_value)
+#     for u,v,w in G_Group.edges(data=True):
+#         # w['weight'] = w['weight']
+#         w['weight'] = w['weight'] + super_param*(tick(np.abs(node_values[u] - node_values[v])) - min_difference_value)/(max_difference_value-min_difference_value)
+#     mst_Group = According_StartNode_GetMST(G_Group, start_Group)
+#     mst_Group_edges = list(mst_Group.edges)
+#     np.savetxt(result_path+FolderName+'\mst_Group.txt', mst_Group_edges, fmt='%s', delimiter=',')
+#     G_amend_edges = np.empty((0, 3))
+#     for u,v,w in list(G.edges(data=True)):
+#         if (adata.obs.loc[u, 'group_id'], adata.obs.loc[v, 'group_id']) not in mst_Group_edges and (adata.obs.loc[v, 'group_id'], adata.obs.loc[u, 'group_id']) not in mst_Group_edges:
+#             G.remove_edge(u,v)
+#         else:
+#             G_amend_edges=np.append(G_amend_edges, [u,v,w['weight']])
+#     np.savetxt(result_path+FolderName+'\G_edges.txt', G_amend_edges, fmt='%s', delimiter=',')
+#     edge_number = len(adata.uns['milestone_network'][0])
+#     milestone_network = []
+#     for i in range(edge_number):
+#         milestone_network.append((adata.uns['milestone_network'][0][i], adata.uns['milestone_network'][1][i]))
+#     G_milestone_network = nx.Graph()
+#     G_milestone_network.add_edges_from(milestone_network)
+#     common_elements = set(map(frozenset, mst_Group.edges())) & set(map(frozenset, G_milestone_network.edges()))
+#     count = len(common_elements)
+#     print('正确率：', count/edge_number)
+#     return count/edge_number
+def getmst1(PBA_T, adata, FolderName, result_path, neighborsNumber):
     transition_proba = np.loadtxt(result_path+FolderName+'/transition_proba.txt')
     distance_matrix = np.loadtxt(result_path+FolderName+'/distance.txt')
-
     GroupIdDict = {}
     i = 0
     for item in adata.obs['group_id'].unique():
@@ -309,7 +385,6 @@ def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, super_param):
     for item in adata.obs['group_id'].values:
         GroupId.append(int(GroupIdDict[item]))
     adata.obs['GroupId'] = GroupId
-
     sc.tl.pca(adata, svd_solver="arpack")
     pca_data = adata.obsm['X_pca']
     sc.pp.neighbors(adata, n_neighbors=neighborsNumber)
@@ -322,8 +397,6 @@ def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, super_param):
     distance_all = min_max(distances)*min_max(distance_matrix)
     # np.savetxt(result_path+FolderName+'/distance_all.txt', distance_all)
     # distance_all = np.loadtxt(result_path+FolderName+'/distance_all.txt')
-
-
     # adata.obsm['distance_all'] = distance_all
     RootGroup1 = []
     root_index = [np.where(adata.obs.index==item)[0][0] for item in adata.uns['start_id']]
@@ -332,33 +405,26 @@ def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, super_param):
     distance_all_amend, distances_transition_proba = amend_matrix(distance_all, neighborsNumber)
     _ = mfpt_f(transition_proba, adata)
     PBA_T = PBA(adata, distances_transition_proba, transition_proba)
-    # np.savetxt(result_path+FolderName+'/PBA.txt', PBA_T)
+    np.savetxt(result_path+FolderName+'/PBA.txt', PBA_T)
     # PBA_T = np.loadtxt(result_path+FolderName+'/PBA.txt')
     pseudo_time, _ = Caculate_PseudoTime(PBA_T, root_index, RootGroup1, adata)
-    # np.savetxt(result_path+FolderName+'/pseudo_time.txt', pseudo_time)
+    np.savetxt(result_path+FolderName+'/pseudo_time.txt', pseudo_time)
     # pseudo_time = np.loadtxt(result_path+FolderName+'/pseudo_time.txt')
     adata.obs['pseudo time'] = pseudo_time
     distance_all_amend_df = pd.DataFrame(distance_all_amend, index=adata.obs.index, columns=adata.obs.index)
     G = adjacency_matrix_to_graph(distance_all_amend ,adata)
-    # start_node = adata.uns['start_id'][0]
-    # mst = prim_with_start(G, start_node)
     GroupIndex = []
     for item in adata.obs['GroupId'].unique():
         GroupIndex.append(np.where(adata.obs['GroupId'] == item)[0])
     G_Group, node_values, node_length = CropNode(G, adata[list(G.nodes),:], RootGroup1, distance_all_amend_df)
+    return G_Group, node_values, node_length, adata, G
+
+def getmst(G, G_Group, node_values, node_length, adata, result_path, FolderName, super_param):
     node_values_list = list(node_values.values())
     max_node_values_list = np.max(node_values_list)
     min_node_values_list = np.min(node_values_list)
     for item in node_values.keys():
         node_values[item] = (node_values[item]-min_node_values_list)/(max_node_values_list-min_node_values_list)
-    # print(node_values)
-    # pos_Group = nx.spring_layout(G_Group)
-    # nx.draw_networkx_nodes(G_Group, pos_Group, node_size=300, alpha=1)
-    # nx.draw_networkx_edges(G_Group, pos_Group, edge_color='k', width=1, alpha=0.3, arrowsize=3)
-    # nx.draw_networkx_labels(G_Group, pos_Group, font_size=17, font_color='k', font_family='Times New Roman')
-    # plt.title('G')
-    # plt.axis('off')
-    # plt.show()
     start_Group = adata.uns['start_milestones']
     max_weigth = 0
     min_weigth = 100000000
@@ -371,45 +437,23 @@ def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, super_param):
         w['weight'] = (w['weight']-min_weigth)/(max_weigth-min_weigth)
     difference_value = []
     for u,v in G_Group.edges:
-        # difference_value.append(tick(np.abs(adata.obs.iloc[np.where(adata.obs['group_id'] == u)[0][0], 4] - adata.obs.iloc[np.where(adata.obs['group_id'] == v)[0][0], 4])))
-        # w['weight'] = w['weight']
         difference_value.append(tick(np.abs(node_values[u] - node_values[v])))
     max_difference_value = np.max(difference_value)
     min_difference_value = np.min(difference_value)
     for u,v,w in G_Group.edges(data=True):
         # w['weight'] = w['weight']
         w['weight'] = w['weight'] + super_param*(tick(np.abs(node_values[u] - node_values[v])) - min_difference_value)/(max_difference_value-min_difference_value)
-        # print(w['weight'])
-    # mst_Group = According_StartNode_GetMST(G_Group, start_Group)
-    # print(G_Group.edges())
-    try:
-        mst_Group = According_StartNode_GetMST(G_Group, start_Group)
-        # print(mst_Group.edges())
-        # mst_Group = nx.minimum_spanning_tree(G_Group, algorithm='kruskal', weight='weight')
-        # mst_Group = prim_with_start(G_Group, start_Group)
-        # mst_Group = directed_mst(mst_Group, start_Group)
-        # pos_Group = nx.spring_layout(mst_Group)
-        # nx.draw_networkx_nodes(mst_Group, pos_Group, node_size=300, alpha=1)
-        # nx.draw_networkx_edges(mst_Group, pos_Group, edge_color='k', width=1, alpha=0.3, arrowsize=3)
-        # nx.draw_networkx_labels(mst_Group, pos_Group, font_size=10, font_color='k', font_family='Times New Roman')
-        # plt.title('MST')
-        # plt.axis('off')
-        # plt.show()
-        mst_Group_edges = list(mst_Group.edges)
-        np.savetxt(result_path+FolderName+'\mst_Group.txt', mst_Group_edges, fmt='%s', delimiter=',')
-        G_amend_edges = np.empty((0, 3))
-        for u,v,w in list(G.edges(data=True)):
-            if (adata.obs.loc[u, 'group_id'], adata.obs.loc[v, 'group_id']) not in mst_Group_edges and (adata.obs.loc[v, 'group_id'], adata.obs.loc[u, 'group_id']) not in mst_Group_edges:
-                G.remove_edge(u,v)
-            else:
-                G_amend_edges=np.append(G_amend_edges, [u,v,w['weight']])
-        np.savetxt(result_path+FolderName+'\G_edges.txt', G_amend_edges, fmt='%s', delimiter=',')
-    except:
-        print('disconnect')
-    # for item_milestone_network in adata.uns['milestone_network']:
-    #     print(item_milestone_network)
+    mst_Group = According_StartNode_GetMST(G_Group, start_Group)
+    mst_Group_edges = list(mst_Group.edges)
+    np.savetxt(result_path+FolderName+'\mst_Group.txt', mst_Group_edges, fmt='%s', delimiter=',')
+    G_amend_edges = np.empty((0, 3))
+    for u,v,w in list(G.edges(data=True)):
+        if (adata.obs.loc[u, 'group_id'], adata.obs.loc[v, 'group_id']) not in mst_Group_edges and (adata.obs.loc[v, 'group_id'], adata.obs.loc[u, 'group_id']) not in mst_Group_edges:
+            G.remove_edge(u,v)
+        else:
+            G_amend_edges=np.append(G_amend_edges, [u,v,w['weight']])
+    np.savetxt(result_path+FolderName+'\G_edges.txt', G_amend_edges, fmt='%s', delimiter=',')
     edge_number = len(adata.uns['milestone_network'][0])
-    # print(adata.uns['milestone_network'])
     milestone_network = []
     for i in range(edge_number):
         milestone_network.append((adata.uns['milestone_network'][0][i], adata.uns['milestone_network'][1][i]))
@@ -418,21 +462,17 @@ def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, super_param):
     common_elements = set(map(frozenset, mst_Group.edges())) & set(map(frozenset, G_milestone_network.edges()))
     count = len(common_elements)
     print('正确率：', count/edge_number)
-    # print(len(adata.uns['start_milestones']))
-    # print(adata.uns['milestone_network'][0])#输出真实的细胞分化轨迹
     return count/edge_number
-
-
-
-
 def optimize_super_param(PBA_T, adata, FolderName, result_path, neighborsNumber, param_range=np.linspace(0, 1, 11)):
     best_param = None
     best_score = -np.inf  # 评分越高越好
     optimize_record = np.empty((11, 2))
     i = 0
+    G_Group, node_values, node_length, adata, G = getmst1(PBA_T, adata, FolderName, result_path, neighborsNumber)
     for param in param_range:
         # 调用 getmst 函数
-        score = getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, super_param=param)
+        # score = getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, super_param=param)
+        score = getmst(G, G_Group, node_values, node_length, adata, result_path, FolderName, param)
         optimize_record[i, 0], optimize_record[i, 1] = param, score
         i += 1
         print(f"当前参数: {param}, 当前评分: {score}")
@@ -442,6 +482,5 @@ def optimize_super_param(PBA_T, adata, FolderName, result_path, neighborsNumber,
     
     print(f"最佳 super_param: {best_param}, 评分: {best_score}")
     return optimize_record, best_param, best_score
-
 # best_param, best_score = optimize_super_param(PBA_T, adata, save_path, neighborsNumber)
 

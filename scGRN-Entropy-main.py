@@ -47,15 +47,16 @@ def main(FolderName, data_path, result_path):
     except:
         print('Have not enouth genes')
 
-    neighborsNumber = int(len(adata.obs) * 0.01)
+    neighborsNumber = int(len(adata.obs) * 0.1)
+
     if neighborsNumber < 10:
         print('数据集太小了')
         neighborsNumber = 10
-    # pooled_data = True_pool(adata,len(adata.var))
 
     directory = result_path+FolderName
     if not os.path.exists(directory):
         os.makedirs(directory)
+    # pooled_data = True_pool(adata,len(adata.var))
     # pooled_data.to_csv(result_path+FolderName+'/pooled_data.csv')
     pooled_data = pd.read_csv(result_path+FolderName+'/pooled_data.csv', index_col=0)
     hvg_express_array = pooled_data.values
@@ -76,11 +77,11 @@ def main(FolderName, data_path, result_path):
     # getmst(PBA_T, adata, FolderName, result_path, neighborsNumber)
     optimize_record, best_param, best_score = optimize_super_param(PBA_T, adata, FolderName, result_path, neighborsNumber)
     np.savetxt(result_path+FolderName+'/optimize_record.txt', optimize_record)
-    getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, best_param)
+    # getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, best_param)
 
-
+np.random.seed(1)
 # data_path = "D:/A_study/A_study/cell_differentiation2/code/data/silvero/"
-# FolderName = 'germline-human-both_guo'
+# FolderName = 'germline-human-female_li'
 # result_path = "D:/A_study/A_study/cell_differentiation2/code/result/silver_valve2/"
 # main(data_path, FolderName, result_path)
 # 启用R到pandas的数据框转换
@@ -88,8 +89,8 @@ pandas2ri.activate()
 # 导入R的base包
 base = importr('base')
 # 指定文件夹路径
-data_path = "D:/A_study/A_study/cell_differentiation2/code/data/goldo/"
-result_path = "D:/A_study/A_study/cell_differentiation2/code/result/gold_valve2/"
+data_path = "D:/A_study/A_study/cell_differentiation2/code/data/silvero/"
+result_path = "D:/A_study/A_study/cell_differentiation2/code/result/silver_valve2/"
 # 获取文件夹中所有.rds文件
 rds_files = Path(data_path).rglob('*.rds')
 # 按顺序读取每个.rds文件
