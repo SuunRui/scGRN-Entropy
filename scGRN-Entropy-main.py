@@ -23,6 +23,8 @@ import pcurve
 import heapq
 from scipy.spatial.distance import pdist, squareform
 
+
+np.random.seed(1)
 def main(FolderName, data_path, result_path):
     # Load the RDS file 
     rds_data = robjects.r['readRDS'](data_path + FolderName + '.rds')
@@ -62,35 +64,33 @@ def main(FolderName, data_path, result_path):
     hvg_express_array = pooled_data.values
     # _ = GRN_func(0, len(hvg_express_array[0]), hvg_express_array, result_path + FolderName)
     GRNs = read_GRN(hvg_express_array, len(hvg_express_array), len(hvg_express_array[0]), result_path + FolderName)
-    # transition_proba = caculate_transition_proba(GRNs)
-    # np.savetxt(result_path+FolderName+'/transition_proba.txt', transition_proba)
+    transition_proba = caculate_transition_proba(GRNs)
+    np.savetxt(result_path+FolderName+'/transition_proba.txt', transition_proba)
     transition_proba = np.loadtxt(result_path+FolderName+'/transition_proba.txt')
     _ = mfpt_f(transition_proba, adata)
     top_ten_indices = np.argsort(-transition_proba, axis=1)[:, :neighborsNumber]
     distances_transition_proba = np.zeros(transition_proba.shape)
     for i in range(len(top_ten_indices)):
         distances_transition_proba[i, top_ten_indices[i]] = 1
-    # PBA_T = PBA(adata, distances_transition_proba, transition_proba)
-    # np.savetxt(result_path+FolderName+'/PBA.txt', PBA_T)
+    PBA_T = PBA(adata, distances_transition_proba, transition_proba)
+    np.savetxt(result_path+FolderName+'/PBA.txt', PBA_T)
     PBA_T = np.loadtxt(result_path+FolderName+'/PBA.txt')
     save_distance(FolderName, result_path, data_path)
-    # getmst(PBA_T, adata, FolderName, result_path, neighborsNumber)
-    optimize_record, best_param, best_score = optimize_super_param(PBA_T, adata, FolderName, result_path, neighborsNumber)
-    np.savetxt(result_path+FolderName+'/optimize_record.txt', optimize_record)
-    # getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, best_param)
+    getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, 0.3)
 
-np.random.seed(1)
+
 # data_path = "D:/A_study/A_study/cell_differentiation2/code/data/silvero/"
-# FolderName = 'germline-human-female_li'
+# FolderName = 'placenta-trophoblast-differentiation_mca'
 # result_path = "D:/A_study/A_study/cell_differentiation2/code/result/silver_valve2/"
-# main(data_path, FolderName, result_path)
-# 启用R到pandas的数据框转换
+# main(FolderName, data_path, result_path)
+# # 启用R到pandas的数据框转换
+
 pandas2ri.activate()
 # 导入R的base包
 base = importr('base')
 # 指定文件夹路径
-data_path = "D:/A_study/A_study/cell_differentiation2/code/data/silvero/"
-result_path = "D:/A_study/A_study/cell_differentiation2/code/result/silver_valve2/"
+data_path = "D:/A_study/A_study/cell_differentiation2/code/data/goldo/"
+result_path = "D:/A_study/A_study/cell_differentiation2/code/result/gold_valve2/"
 # 获取文件夹中所有.rds文件
 rds_files = Path(data_path).rglob('*.rds')
 # 按顺序读取每个.rds文件
