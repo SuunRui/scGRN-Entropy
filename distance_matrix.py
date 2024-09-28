@@ -33,7 +33,7 @@ def GRN_hotfig(GRN):
     dim_in = np.sum(np.abs(GRN_copy), axis = 1)
     dim_out = np.sum(np.abs(GRN_copy), axis = 0)
     return dim_in, dim_out
-def caculate_transition_proba(GRNs):
+def caculate_distance(GRNs):
     cellNumber = len(GRNs)
     transition_proba = np.zeros((cellNumber, cellNumber))
     for i in range(cellNumber):
@@ -57,7 +57,7 @@ def save_distance(FolderName, result_path, data_path):
     #     neighborsNumber = 10
     hvg_express_array = pooled_data.values
     GRNs, _ = read_GRN(hvg_express_array, len(hvg_express_array), len(hvg_express_array[0]), result_path + FolderName)
-    transition_proba = caculate_transition_proba(GRNs)
+    transition_proba = caculate_distance(GRNs)
     np.savetxt(result_path+FolderName+'/distance.txt', transition_proba)
 
 # 启用R到pandas的数据框转换
