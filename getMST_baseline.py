@@ -287,9 +287,17 @@ def According_StartNode_GetMST(G_Group, start_node):
         print('Error, No Have Root Cell')
     return mst_Group
 
-def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, super_param):
-    transition_proba = np.loadtxt(result_path+FolderName+'/transition_proba.txt')
-    distance_matrix = np.loadtxt(result_path+FolderName+'/distance.txt')
+def DistanceToProb(distance):
+    prob = np.empty((distance.shape))
+    i = 0
+    for item in distance:
+        prob[i,:] = (np.max(item) - item)/(np.max(item)-np.max(item))
+        prob[i, :] = prob[i, :] / np.sum(prob[i, :])
+    return prob
+
+def getmst_bseline(adata, FolderName, save_path, neighborsNumber, super_param):
+    # transition_proba = np.loadtxt(result_path+FolderName+'/transition_proba.txt')
+    # distance_matrix = np.loadtxt(result_path+FolderName+'/distance.txt')
     GroupIdDict = {}
     i = 0
     for item in adata.obs['group_id'].unique():
@@ -306,11 +314,13 @@ def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, super_param):
     # 计算样本之间的欧氏距离
     distances = pdist(pca_data, metric='euclidean')
     distances = squareform(distances)
-    np.savetxt(result_path+FolderName+'/distance_pca.txt', distances)
-    distances = np.loadtxt(result_path+FolderName+'/distance_pca.txt')
-    distance_all = min_max(distances)*min_max(distance_matrix)
-    np.savetxt(result_path+FolderName+'/distance_all.txt', distance_all)
-    distance_all = np.loadtxt(result_path+FolderName+'/distance_all.txt')
+    np.savetxt(save_path+FolderName+'/distance_pca.txt', distances)
+    # distances = np.loadtxt(result_path+FolderName+'/distance_pca.txt')
+    transition_proba = DistanceToProb(distances)
+    # distance_all = min_max(distances)*min_max(distance_matrix)
+    distance_all = distances
+    np.savetxt(save_path+FolderName+'/distance_all.txt', distance_all)
+    # distance_all = np.loadtxt(result_path+FolderName+'/distance_all.txt')
     # adata.obsm['distance_all'] = distance_all
     RootGroup1 = []
     root_index = [np.where(adata.obs.index==item)[0][0] for item in adata.uns['start_id']]
@@ -319,10 +329,10 @@ def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, super_param):
     distance_all_amend, distances_transition_proba = amend_matrix(distance_all, neighborsNumber)
     _ = mfpt_f(transition_proba, adata)
     PBA_T = PBA(adata, distances_transition_proba, transition_proba)
-    np.savetxt(result_path+FolderName+'/PBA.txt', PBA_T)
+    np.savetxt(save_path+FolderName+'/PBA.txt', PBA_T)
     # PBA_T = np.loadtxt(result_path+FolderName+'/PBA.txt')
     pseudo_time, _ = Caculate_PseudoTime(PBA_T, root_index, RootGroup1, adata)
-    np.savetxt(result_path+FolderName+'/pseudo_time.txt', pseudo_time)
+    np.savetxt(save_path+FolderName+'/pseudo_time.txt', pseudo_time)
     # pseudo_time = np.loadtxt(result_path+FolderName+'/pseudo_time.txt')
     adata.obs['pseudo time'] = pseudo_time
     distance_all_amend_df = pd.DataFrame(distance_all_amend, index=adata.obs.index, columns=adata.obs.index)
@@ -356,14 +366,14 @@ def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, super_param):
         w['weight'] = w['weight'] + super_param*(tick(np.abs(node_values[u] - node_values[v])) - min_difference_value)/(max_difference_value-min_difference_value)
     mst_Group = According_StartNode_GetMST(G_Group, start_Group)
     mst_Group_edges = list(mst_Group.edges)
-    np.savetxt(result_path+FolderName+'\mst_Group.txt', mst_Group_edges, fmt='%s', delimiter=',')
+    np.savetxt(save_path+FolderName+'\mst_Group.txt', mst_Group_edges, fmt='%s', delimiter=',')
     G_amend_edges = np.empty((0, 3))
     for u,v,w in list(G.edges(data=True)):
         if (adata.obs.loc[u, 'group_id'], adata.obs.loc[v, 'group_id']) not in mst_Group_edges and (adata.obs.loc[v, 'group_id'], adata.obs.loc[u, 'group_id']) not in mst_Group_edges:
             G.remove_edge(u,v)
         else:
             G_amend_edges=np.append(G_amend_edges, [u,v,w['weight']])
-    np.savetxt(result_path+FolderName+'\G_edges.txt', G_amend_edges, fmt='%s', delimiter=',')
+    np.savetxt(save_path+FolderName+'\G_edges.txt', G_amend_edges, fmt='%s', delimiter=',')
     edge_number = len(adata.uns['milestone_network'][0])
     milestone_network = []
     for i in range(edge_number):
@@ -374,7 +384,5 @@ def getmst(PBA_T, adata, FolderName, result_path, neighborsNumber, super_param):
     count = len(common_elements)
     print('正确率：', count/edge_number)
     CorrectRate = np.array([count/edge_number])
-    np.savetxt(result_path+FolderName+'/CorrectRate.txt', CorrectRate)
+    np.savetxt(save_path+FolderName+'/CorrectRate.txt', CorrectRate)
     return count/edge_number
-
-
