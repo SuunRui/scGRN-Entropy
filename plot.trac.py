@@ -46,7 +46,7 @@ def shortest_path_to_pseudo_time_group(G, start_group):
 def plot_trajectory(adata, save_path, result_path, FolderName, neighborsNumber):
     # 设置字体属性
     font_properties = {
-            'fontsize': 10,
+            'fontsize': 16,
             'fontweight': 'bold',
             'fontstyle': 'italic',
             'fontname': 'Times New Roman',
@@ -100,13 +100,13 @@ def plot_trajectory(adata, save_path, result_path, FolderName, neighborsNumber):
     scatter = ax.scatter(adata.obsm['X_umap'][:,0], adata.obsm['X_umap'][:,1], c=adata.obs['pseudo time'].values, cmap=cmap)
     
     # 绘制最小生成树的边
-    for item in new_mst_edges:
+    for item in mst_Group_edges:
         start_x, start_y = mean_position_dif[item[0]][0], mean_position_dif[item[0]][1]
         end_x, end_y = mean_position_dif[item[1]][0], mean_position_dif[item[1]][1]
         
         # 在起点和终点添加文本标签
-        ax.text(start_x, start_y, item[0], fontdict=font_properties, verticalalignment='bottom', horizontalalignment='right')
-        ax.text(end_x, end_y, item[1], fontdict=font_properties, verticalalignment='bottom', horizontalalignment='right')
+        # ax.text(start_x, start_y, item[0], fontdict=font_properties, verticalalignment='bottom', horizontalalignment='right')
+        # ax.text(end_x, end_y, item[1], fontdict=font_properties, verticalalignment='bottom', horizontalalignment='right')
         
         # 绘制边
         plt.plot([start_x, end_x], [start_y, end_y], c='k')
@@ -115,7 +115,7 @@ def plot_trajectory(adata, save_path, result_path, FolderName, neighborsNumber):
     ax.axis('off')
     
     # 保存图像
-    plt.savefig(os.path.join(save_path, 'Differentiation_trajectory.svg'), format='svg')
+    plt.savefig(os.path.join(save_path, 'Differentiation_trajectory_None.svg'), format='svg')
     # plt.show()
 
 def main(FolderName, data_path, result_path, save_path):
@@ -151,8 +151,8 @@ def main(FolderName, data_path, result_path, save_path):
     plot_trajectory(adata, save_path, result_path, FolderName, neighborsNumber)
 
 
-data_path = "D:/A_study/A_study/cell_differentiation2/code/data/trajectory_type/"
-result_path = "D:/A_study/A_study/cell_differentiation2/code/result/gold_valve2/"
+data_path = "D:/A_study/A_study/cell_differentiation2/code/data/silver1/"
+result_path = "D:/A_study/A_study/cell_differentiation2/code/result/silver_valve2/"
 pandas2ri.activate()
 # 导入R的base包
 base = importr('base')
@@ -161,7 +161,7 @@ base = importr('base')
 rds_files = Path(data_path).rglob('*.rds')
 # 按顺序读取每个.rds文件
 for rds_file in sorted(rds_files):
-    save_path = 'D:/A_study/A_study/cell_differentiation2/paper/paper/fig/result/'
+    save_path = "D:/A_study/A_study/cell_differentiation2/paper/paper/fig/result/"
     # 读取.rds文件
     rds_content = base.readRDS(str(rds_file))
     # 获取.rds文件的名称（不包括扩展名）
