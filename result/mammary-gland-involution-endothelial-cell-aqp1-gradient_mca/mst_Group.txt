@@ -1,2 +1,0 @@
-Endothelial cell_Aqp1 high(Mammary-Gland-Involution),Endothelial cell_Fabp4&Aqp1 high(Mammary-Gland-Involution)
-Endothelial cell_Fabp4 high(Mammary-Gland-Involution),Endothelial cell_Fabp4&Aqp1 high(Mammary-Gland-Involution)
